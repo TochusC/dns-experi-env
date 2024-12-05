@@ -1,0 +1,69 @@
+services:
+  client:
+    build: containers/client
+    container_name: client
+    command: tail -f /dev/null
+    volumes:
+      - ./disk:/usr/local/disk
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.2
+  
+  authority:
+    build: containers/authority
+    container_name: authority
+    volumes:
+      - ./disk:/usr/local/disk
+    privileged: true
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.3
+        
+  unbound:
+    build: containers/resolvers/unbound
+    container_name: unbound
+    volumes:
+      - ./disk/trust-anchor/test.key:/usr/local/etc/unbound/test.key
+      - ./containers/resolvers/unbound/unbound.conf:/usr/local/etc/unbound/unbound.conf
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.4
+
+  bind:
+    build: containers/resolvers/bind
+    container_name: bind
+    volumes:
+      - ./disk/hints/named.root:/var/named/chroot/var/named/named.root
+      - ./containers/resolvers/bind/conf/named:/etc/default/named
+      - ./containers/resolvers/bind/conf/named.conf:/var/named/chroot/etc/named.conf
+      - ./containers/resolvers/bind/conf/named.log:/etc/named.log
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.5
+
+  knot:
+    build: containers/resolvers/knot
+    container_name: knot
+    volumes:
+      - ./disk/hints/named.root:/etc/named.root
+      - ./containers/resolvers/knot/kresd.conf:/etc/knot/kresd.conf
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.6
+    
+  powerdns:
+    build: containers/resolvers/powerdns
+    container_name: pdns
+    volumes:
+      - ./disk/trust-anchor/test.key:/etc/pdns/test.key
+      - ./containers/resolvers/powerdns/recursor.conf:/etc/pdns/recursor.conf
+    networks:
+      dns_experi_net:
+        ipv4_address: 10.10.0.7
+
+networks:
+  dns_experi_net:
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+
